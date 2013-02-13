@@ -194,6 +194,7 @@ private:
   
   int m_use_avatar;
   cOrgSensor m_sensor;
+  bool m_from_sensor;
   
   struct {
     unsigned int m_cycle_count:16;
@@ -249,8 +250,8 @@ public:
   int GetType() const { return HARDWARE_TYPE_CPU_EXPERIMENTAL; }  
   bool SupportsSpeculative() const { return true; }
   void PrintStatus(std::ostream& fp);
-  void SetupMiniTraceFileHeader(const cString& filename, const int gen_id, const cString& genotype);
-  void PrintMiniTraceStatus(cAvidaContext& ctx, std::ostream& fp, const cString& next_name);
+  void SetupMiniTraceFileHeader(Avida::Output::File& df, const int gen_id, const Apto::String& genotype);
+  void PrintMiniTraceStatus(cAvidaContext& ctx, std::ostream& fp);
   void PrintMiniTraceSuccess(std::ostream& fp, const int exec_success);
   
   // --------  Stack Manipulation  --------
@@ -284,6 +285,7 @@ public:
   // --------  Register Manipulation  --------
   int GetRegister(int reg_id) const { return m_threads[m_cur_thread].reg[reg_id].value; }
   int GetNumRegisters() const { return NUM_REGISTERS; }
+  bool FromSensor(int reg_id) const { return m_threads[m_cur_thread].reg[reg_id].from_sensor; }
   
   
   // --------  Thread Manipulation  --------
@@ -562,6 +564,7 @@ private:
   bool Inst_SetForageTargetOnce(cAvidaContext& ctx);
   bool Inst_SetRandForageTargetOnce(cAvidaContext& ctx);
   bool Inst_GetForageTarget(cAvidaContext& ctx);
+  bool Inst_ShowForageTarget(cAvidaContext& ctx);
   bool Inst_GetLocOrgDensity(cAvidaContext& ctx);
   bool Inst_GetFacedOrgDensity(cAvidaContext& ctx);
   
@@ -598,9 +601,14 @@ private:
   bool Inst_AttackPrey(cAvidaContext& ctx); 
   bool Inst_AttackPreyGroup(cAvidaContext& ctx);
   bool Inst_AttackPreyShare(cAvidaContext& ctx);
+  bool Inst_AttackPreyNoShare(cAvidaContext& ctx);
+  bool Inst_AttackPreyFakeShare(cAvidaContext& ctx);
+  bool Inst_AttackPreyFakeGroupShare(cAvidaContext& ctx);
+  bool Inst_AttackPreyGroupShare(cAvidaContext& ctx);
   bool Inst_AttackSpecPrey(cAvidaContext& ctx);
   bool Inst_AttackPreyArea(cAvidaContext& ctx);
   bool Inst_AttackFTPrey(cAvidaContext& ctx); 
+  bool Inst_AttackPoisionPrey(cAvidaContext& ctx);
   bool Inst_FightMeritOrg(cAvidaContext& ctx); 
   bool Inst_FightBonusOrg(cAvidaContext& ctx); 
   bool Inst_GetMeritFightOdds(cAvidaContext& ctx); 
@@ -633,6 +641,8 @@ private:
   // Control-type Instructions
   bool Inst_ScrambleReg(cAvidaContext& ctx);
   
+  bool Inst_DonateSpecific(cAvidaContext& ctx);
+  bool Inst_GetFacedEditDistance(cAvidaContext& ctx);  
 
 private:
   std::pair<bool, int> m_last_cell_data; // If cell data has been previously collected, and it's value
@@ -662,6 +672,8 @@ public:
   void MakePred(cAvidaContext& ctx);
   void MakeTopPred(cAvidaContext& ctx);
   bool TestAttack(cAvidaContext& ctx);
+  bool TestAttackPred(cAvidaContext& ctx);
+  void UpdateGroupAttackStats(cString& inst);
 };
 
 

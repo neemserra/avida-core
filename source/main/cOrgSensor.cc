@@ -118,7 +118,8 @@ const cOrgSensor::sLookOut cOrgSensor::SetLooking(cAvidaContext& ctx, sLookInit&
   if (habitat_used != -2) { 
     // if invalid res id...
     if (id_sought < -1 || id_sought >= lib_size) {
-      if (forage < 0 || forage >= lib_size) id_sought = -1;                             // e.g. predators looking for res or wacky forage target
+      if (m_world->GetEnvironment().IsHabitat(habitat_used)) id_sought = -1;      // don't override habitat if it's valid -- else can make it hard for org to see walls and other habitats that would not be expected to match their ft
+      else if (forage < 0 || forage >= lib_size) id_sought = -1;                             // e.g. predators looking for res or wacky forage target
       else id_sought = forage;
     }
     if (id_sought != -1) habitat_used = resource_lib.GetResource(id_sought)->GetHabitat();    
@@ -269,7 +270,8 @@ cOrgSensor::sLookOut cOrgSensor::FindOrg(cOrganism* target_org, const int distan
     }
     org_search.forage = target_org->GetForageTarget();  
     if ((target_org->IsDisplaying() || m_world->GetConfig().USE_DISPLAY.Get()) && target_org->GetOrgDisplayData() != NULL) SetLastSeenDisplay(target_org->GetOrgDisplayData());
-    if (m_world->GetConfig().USE_DISPLAY.Get() == 0 || m_world->GetConfig().USE_DISPLAY.Get() == 1) SetPotentialDisplayData(org_search);   
+    if (m_world->GetConfig().USE_DISPLAY.Get() == 0 || m_world->GetConfig().USE_DISPLAY.Get() == 1) SetPotentialDisplayData(org_search);
+    if (m_world->GetConfig().USE_MIMICS.Get() && org_search.forage == 1) org_search.forage = target_org->GetShowForageTarget();
   }
   return org_search;
 } 
@@ -616,6 +618,7 @@ cOrgSensor::sLookOut cOrgSensor::WalkCells(cAvidaContext& ctx, const cResourceLi
       }
       stuff_seen.forage = first_org->GetForageTarget();   
       if ((first_org->IsDisplaying()  || m_world->GetConfig().USE_DISPLAY.Get()) && first_org->GetOrgDisplayData() != NULL) SetLastSeenDisplay(first_org->GetOrgDisplayData());            
+      if (m_world->GetConfig().USE_MIMICS.Get() && stuff_seen.forage == 1) stuff_seen.forage = first_org->GetShowForageTarget();
     }
     if (m_world->GetConfig().USE_DISPLAY.Get() == 0 || m_world->GetConfig().USE_DISPLAY.Get() == 1) SetPotentialDisplayData(stuff_seen);   
   }

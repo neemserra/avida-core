@@ -262,6 +262,7 @@ tInstLib<cHardwareCPU::tMethod>* cHardwareCPU::initInstLib(void)
     tInstLibEntry<tMethod>("donate-rnd", &cHardwareCPU::Inst_DonateRandom),
     tInstLibEntry<tMethod>("donate-kin", &cHardwareCPU::Inst_DonateKin),
     tInstLibEntry<tMethod>("donate-edt", &cHardwareCPU::Inst_DonateEditDist),
+    tInstLibEntry<tMethod>("get-faced-edit-dist", &cHardwareCPU::Inst_GetFacedEditDistance),
     tInstLibEntry<tMethod>("donate-gbg",  &cHardwareCPU::Inst_DonateGreenBeardGene),
     tInstLibEntry<tMethod>("donate-tgb",  &cHardwareCPU::Inst_DonateTrueGreenBeard),
     tInstLibEntry<tMethod>("donate-shadedgb",  &cHardwareCPU::Inst_DonateShadedGreenBeard),
@@ -292,6 +293,7 @@ tInstLib<cHardwareCPU::tMethod>* cHardwareCPU::initInstLib(void)
     tInstLibEntry<tMethod>("donate-resource2", &cHardwareCPU::Inst_DonateResource2, INST_CLASS_ENVIRONMENT, nInstFlag::STALL),
     tInstLibEntry<tMethod>("IObuf-add1", &cHardwareCPU::Inst_IOBufAdd1, INST_CLASS_ENVIRONMENT, nInstFlag::STALL),
     tInstLibEntry<tMethod>("IObuf-add0", &cHardwareCPU::Inst_IOBufAdd0, INST_CLASS_ENVIRONMENT, nInstFlag::STALL),
+    tInstLibEntry<tMethod>("donate-specific", &cHardwareCPU::Inst_DonateSpecific, INST_CLASS_ENVIRONMENT, nInstFlag::STALL),
     
     tInstLibEntry<tMethod>("rotate-l", &cHardwareCPU::Inst_RotateL, INST_CLASS_ENVIRONMENT, nInstFlag::STALL),
     tInstLibEntry<tMethod>("rotate-r", &cHardwareCPU::Inst_RotateR, INST_CLASS_ENVIRONMENT, nInstFlag::STALL),
@@ -923,10 +925,10 @@ bool cHardwareCPU::SingleProcess(cAvidaContext& ctx, bool speculative)
     
     
     // Print the status of this CPU at each step...
-    if (m_tracer != NULL) m_tracer->TraceHardware(ctx, *this);
+    if (m_tracer) m_tracer->TraceHardware(ctx, *this);
     
     // Find the instruction to be executed
-    const Instruction& cur_inst = ip.GetInst();
+    const Instruction cur_inst = ip.GetInst();
     
     if (speculative && (m_spec_die || m_inst_set->ShouldStall(cur_inst))) {
       // Speculative instruction reject, flush and return
@@ -1075,7 +1077,7 @@ void cHardwareCPU::ProcessBonusInst(cAvidaContext& ctx, const Instruction& inst)
   bool prev_run_state = m_organism->IsRunning();
   m_organism->SetRunning(true);
   
-  if (m_tracer != NULL) m_tracer->TraceHardware(ctx, *this, true);
+  if (m_tracer) m_tracer->TraceHardware(ctx, *this, true);
   
   SingleProcess_ExecuteInst(ctx, inst);
   
@@ -1086,7 +1088,7 @@ void cHardwareCPU::ProcessBonusInst(cAvidaContext& ctx, const Instruction& inst)
 void cHardwareCPU::PrintStatus(ostream& fp)
 {
   fp << m_organism->GetPhenotype().GetCPUCyclesUsed() << " ";
-  fp << "IP:" << getIP().GetPosition() << "    ";
+  fp << "IP:" << getIP().GetPosition() << " (" << GetInstSet().GetName(IP().GetInst()) << ")" << endl;
   
   for (int i = 0; i < NUM_REGISTERS; i++) {
     fp << static_cast<char>('A' + i) << "X:" << GetRegister(i) << " ";
@@ -4362,24 +4364,6 @@ void cHardwareCPU::DoEnergyDonateAmount(cOrganism* to_org, const double amount)
     }
   }
   
-  
-  if (m_world->GetConfig().LOG_ENERGY_SHARING.Get() == 1) {    
-    cString tmpfilename = cStringUtil::Stringf("energy_sharing_log.dat");
-    cDataFile& df = m_world->GetDataFile(tmpfilename);
-    
-    cString UpdateStr = cStringUtil::Stringf("%d,%d,%d,%f,%f,%d,%f,%f", 
-                                             m_world->GetStats().GetUpdate(),
-                                             m_world->GetConfig().ENERGY_SHARING_METHOD.Get(),
-                                             m_organism->GetID(),
-                                             energy_given,
-                                             phenotype.GetStoredEnergy(),
-                                             to_org->GetID(),
-                                             energy_received,
-                                             to_org->GetPhenotype().GetStoredEnergy());
-    df.WriteRaw(UpdateStr);
-    
-  }
-  
 } //End DoEnergyDonateAmount()
 
 
@@ -4582,6 +4566,28 @@ bool cHardwareCPU::Inst_DonateEditDist(cAvidaContext& ctx)
   }
   return true;
 	
+}
+
+bool cHardwareCPU::Inst_GetFacedEditDistance(cAvidaContext& ctx)
+{
+  if (!m_organism->IsNeighborCellOccupied()) return false;
+  
+  cOrganism* target = NULL;
+  target = m_organism->GetOrgInterface().GetNeighbor();
+
+  const Genome& org_genome = m_organism->GetGenome();
+  ConstInstructionSequencePtr org_seq_p;
+  org_seq_p.DynamicCastFrom(org_genome.Representation());
+  const InstructionSequence& org_seq = *org_seq_p;
+  
+  const Genome& target_genome = target->GetGenome();
+  ConstInstructionSequencePtr target_seq_p;
+  target_seq_p.DynamicCastFrom(target_genome.Representation());
+  const InstructionSequence& target_seq = *target_seq_p;
+  
+  GetRegister(FindModifiedRegister(REG_BX)) = InstructionSequence::FindEditDistance(org_seq, target_seq);
+  
+  return true;
 }
 
 bool cHardwareCPU::Inst_DonateGreenBeardGene(cAvidaContext& ctx)
@@ -5640,6 +5646,43 @@ bool cHardwareCPU::Inst_DonateResource2(cAvidaContext& ctx)
   return DonateResourceX(ctx, 2);
 } //End Inst_DonateResource2()
 
+
+/*Donates resources to the a neighboring cell */
+bool cHardwareCPU::Inst_DonateSpecific(cAvidaContext& ctx)
+{
+  if (m_organism->GetPhenotype().GetCurNumDonates() > m_world->GetConfig().MAX_DONATES.Get() ||
+      (m_world->GetConfig().MAX_DONATE_EDIT_DIST.Get() > 0 && m_organism->GetPhenotype().GetCurNumDonates() > m_world->GetConfig().MAX_DONATE_EDIT_DIST.Get())) {
+    return false;
+  }
+  if (!m_organism->IsNeighborCellOccupied()) return false;
+  
+  cOrganism* target = NULL;
+  target = m_organism->GetOrgInterface().GetNeighbor();
+  const int resource = m_world->GetConfig().COLLECT_SPECIFIC_RESOURCE.Get();
+  if (m_world->GetConfig().USE_RESOURCE_BINS.Get()){
+    double res_before = m_organism->GetRBin(resource);
+    if (res_before >= 1) {
+      target->AddToRBin (resource, 1);
+      m_organism->GetPhenotype().IncDonates();
+      m_organism->GetPhenotype().SetIsDonorEdit();
+      target->GetPhenotype().SetIsReceiverEdit();
+      
+      const Genome& org_genome = m_organism->GetGenome();
+      ConstInstructionSequencePtr org_seq_p;
+      org_seq_p.DynamicCastFrom(org_genome.Representation());
+      const InstructionSequence& org_seq = *org_seq_p;
+      
+      const Genome& target_genome = target->GetGenome();
+      ConstInstructionSequencePtr target_seq_p;
+      target_seq_p.DynamicCastFrom(target_genome.Representation());
+      const InstructionSequence& target_seq = *target_seq_p;
+      
+      InstructionSequence::FindEditDistance(org_seq, target_seq);
+      return true;
+    }
+  }
+  return false;
+}
 
 bool cHardwareCPU::Inst_SearchF(cAvidaContext&)
 {
@@ -8566,29 +8609,6 @@ bool cHardwareCPU::Inst_DropPheromone(cAvidaContext& ctx)
      */
     deme.AddPheromone(cellid, pher_amount, ctx); 
     
-    // Write some logging information if LOG_PHEROMONE is set.  This is done
-    // out here so that non-pheromone moves are recorded.
-    if ( (m_world->GetConfig().LOG_PHEROMONE.Get() == 1) &&
-        (m_world->GetStats().GetUpdate() >= m_world->GetConfig().PHEROMONE_LOG_START.Get()) ) {
-      cString tmpfilename = cStringUtil::Stringf("drop-pheromone-log.dat");
-      cDataFile& df = m_world->GetDataFile(tmpfilename);
-      
-      int rel_cellid = deme.GetRelativeCellID(cellid);
-      double pher_amount;
-      const int drop_mode =  m_world->GetConfig().PHEROMONE_DROP_MODE.Get();
-      
-      // By columns: update ID, org ID, source cell (relative), destination cell (relative), amount dropped, drop mode
-      if ( (m_world->GetConfig().PHEROMONE_ENABLED.Get() == 1) &&
-          (m_organism->GetPheromoneStatus() == true) ) {
-        pher_amount = m_world->GetConfig().PHEROMONE_AMOUNT.Get();
-      } else {
-        pher_amount = 0;
-      }
-      
-      cString UpdateStr = cStringUtil::Stringf("%d,%d,%d,%d,%f,%d",  m_world->GetStats().GetUpdate(), m_organism->GetID(), deme.GetDemeID(), rel_cellid, pher_amount, drop_mode);
-      df.WriteRaw(UpdateStr);
-    }
-    
   } //End laying pheromone
   
   return true;
@@ -9335,8 +9355,6 @@ bool cHardwareCPU::Inst_DonateFacingRawMaterials(cAvidaContext&)
   }
   return true;
 }  
-
-
 
 /* An organism artificially increases its reputation without donating. */
 bool cHardwareCPU::Inst_Pose(cAvidaContext&)

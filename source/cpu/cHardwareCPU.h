@@ -249,8 +249,8 @@ public:
   int GetType() const { return HARDWARE_TYPE_CPU_ORIGINAL; }  
   bool SupportsSpeculative() const { return true; }
   void PrintStatus(std::ostream& fp);
-  void SetupMiniTraceFileHeader(const cString& filename, const int gen_id, const cString& genotype) { (void)filename, (void)gen_id, (void)genotype; }
-  void PrintMiniTraceStatus(cAvidaContext& ctx, std::ostream& fp, const cString& next_name) { (void)ctx, (void)fp, (void)next_name; }
+  void SetupMiniTraceFileHeader(Avida::Output::File& df, const int gen_id, const Apto::String& genotype) { (void)df, (void)gen_id, (void)genotype; }
+  void PrintMiniTraceStatus(cAvidaContext& ctx, std::ostream& fp) { (void)ctx, (void)fp; }
   void PrintMiniTraceSuccess(std::ostream& fp, const int exec_success) { (void)fp, (void)exec_success; }
 
   // --------  Stack Manipulation...  --------
@@ -530,6 +530,7 @@ private:
   bool Inst_DonateRandom(cAvidaContext& ctx);
   bool Inst_DonateKin(cAvidaContext& ctx);
   bool Inst_DonateEditDist(cAvidaContext& ctx);
+  bool Inst_GetFacedEditDistance(cAvidaContext& ctx);
   bool Inst_DonateGreenBeardGene(cAvidaContext& ctx);
   bool Inst_DonateTrueGreenBeard(cAvidaContext& ctx);
   bool Inst_DonateShadedGreenBeard(cAvidaContext& ctx);
@@ -562,6 +563,8 @@ private:
   bool Inst_DonateResource0(cAvidaContext& ctx);
   bool Inst_DonateResource1(cAvidaContext& ctx);
   bool Inst_DonateResource2(cAvidaContext& ctx);
+  bool Inst_DonateSpecific(cAvidaContext& ctx);
+
 
   bool Inst_SearchF(cAvidaContext& ctx);
   bool Inst_SearchB(cAvidaContext& ctx);

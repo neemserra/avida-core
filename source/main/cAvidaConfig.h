@@ -568,7 +568,6 @@ public:
   CONFIG_ADD_VAR(MIN_GB_DONATE_THRESHOLD, int, -1, "threshold green beard donates only to orgs above this\ndonation attempt threshold; -1=no thresh");
   CONFIG_ADD_VAR(DONATE_THRESH_QUANTA, int, 10, "The size of steps between quanta donate thresholds");
   CONFIG_ADD_VAR(MAX_DONATES, int, 1000000, "Limit on number of donates organisms are allowed.");
-  CONFIG_ADD_VAR(TRACK_DONATES, int, 0, "Track execution circumstances around donate-specific.");
     
   // -------- Kaboom config options -----------
   CONFIG_ADD_GROUP(KABOOM_GROUP, "Kaboom");
@@ -582,11 +581,6 @@ public:
   CONFIG_ADD_GROUP(GENEOLOGY_GROUP, "Geneology");
   CONFIG_ADD_VAR(THRESHOLD, int, 3, "Number of organisms in a genotype needed for it\n  to be considered viable.");
   CONFIG_ADD_VAR(TEST_CPU_TIME_MOD, int, 20, "Time allocated in test CPUs (multiple of length)");
-  
-
-  // -------- Log File config options --------
-  CONFIG_ADD_GROUP(LOG_GROUP, "Log Files");
-  CONFIG_ADD_VAR(TRACE_EXECUTION, bool, 0, "Trace the execution of all organisms in the population (WARNING: SLOW!)");
   
 
   // -------- Organism Network config options --------
@@ -667,7 +661,6 @@ public:
   CONFIG_ADD_VAR(ENERGY_SHARING_INCREMENT, double, 0.01, "Amount to change percent energy shared");
   CONFIG_ADD_VAR(RESOURCE_SHARING_LOSS, double, 0.0, "Fraction of shared resource lost in transfer");
   CONFIG_ADD_VAR(ENERGY_SHARING_UPDATE_METABOLIC, bool, 0, "0/1 (off/on) - Whether to update an organism's metabolic rate on donate or reception/application of energy");
-  CONFIG_ADD_VAR(LOG_ENERGY_SHARING, bool, 0, "Whether or not to log energy shares.  0/1 (off/on)");
   
 
   // -------- Second Pass Metrics config options --------
@@ -735,6 +728,7 @@ public:
   CONFIG_ADD_VAR(LOOK_DISABLE, int, 0, "0: none \n 1: input habitat register \n 2: input sight dist sought \n 3: input type of search (e.g. closest vs count vs total) \n 4: input resource/org id sought \n 5: output habitat used \n 6: output distance used\n 7: output search type used\n 8: output resource/org id used \n 9: output count (edible)\n 10: outptu amount/value seen\n 11: output id seen \n 12: output org forage target seen");
   CONFIG_ADD_VAR(LOOK_DISABLE_TYPE, int, 0, "0: predators \n 1: prey \n 2: both predators and prey");
   CONFIG_ADD_VAR(USE_DISPLAY, int, 0, "If 1, org display data is always 'on' (visible). If 2, org display is on and sensor does not set potential data.");
+  CONFIG_ADD_VAR(USE_MIMICS, int, 0, "If 1, org's with forage target of 1 can show a deceptive ft number (as seen by other orgs via sensor)");
 
   // -------- Pheromone config options --------
   CONFIG_ADD_GROUP(PHEROMONE_GROUP, "Pheromone Settings");
@@ -742,11 +736,8 @@ public:
   CONFIG_ADD_VAR(PHEROMONE_AMOUNT, double, 1.0, "Amount of pheromone to add per drop");
   CONFIG_ADD_VAR(PHEROMONE_DROP_MODE, int, 0, "Where to drop pheromone\n0 = Half amount at src, half at dest\n1 = All at source\n2 = All at dest");
   CONFIG_ADD_VAR(EXPLOIT_EXPLORE_PROB, double, 0.00, "Probability of random exploration\ninstead of pheromone trail following");
-  CONFIG_ADD_VAR(LOG_PHEROMONE, bool, 0, "Log pheromone drops.  0/1 (off/on)");
-  CONFIG_ADD_VAR(PHEROMONE_LOG_START, int, 0, "Update at which to start logging pheromone drops");
   CONFIG_ADD_VAR(EXPLOIT_LOG_START, int, 0, "Update at which to start logging exploit moves");
   CONFIG_ADD_VAR(EXPLORE_LOG_START, int, 0, "Update at which to start logging explore moves");
-  CONFIG_ADD_VAR(MOVETARGET_LOG_START, int, 0, "Update at which to start logging movetarget moves");
   CONFIG_ADD_VAR(LOG_INJECT, bool, 0, "Log injection of organisms.  0/1 (off/on)");
   CONFIG_ADD_VAR(INJECT_LOG_START, int, 0, "Update at which to start logging injection of\norganisms");
   
@@ -804,6 +795,7 @@ public:
   CONFIG_ADD_VAR(PRED_INJURY, double, 0.0, "If an attack fails, target's bonus, merit, and internal resources are reduced by this fraction.");
   CONFIG_ADD_VAR(MIN_PREY, int, 0, "If positive (recommended for prey studies), predator attacks fail if num prey falls below this (0 = off).\nIf negative (recommended for predator studies), random prey of genotype other than target will be cloned (using birth placement methods).");
   CONFIG_ADD_VAR(MAX_PRED, int, 0, "Population cap on number of predators (random predator will be removed when cap is exceeded).");
+  CONFIG_ADD_VAR(MAX_PREY, int, 0, "Population cap on number of prey (random prey will be removed when cap is exceeded). For births, classification as prey is based on parent.");
   CONFIG_ADD_VAR(MARKING_EXPIRE_DATE, int, -1, " Number of updates markings in cells will remain effective on territory move.");
 		
 

@@ -135,8 +135,8 @@ public:
   void HardwareReset(cAvidaContext& ctx);
   void NotifyDeath(cAvidaContext& ctx);
 
-  void PrintStatus(std::ostream& fp, const cString& next_name);
-  void PrintMiniTraceStatus(cAvidaContext& ctx, std::ostream& fp, const cString& next_name);
+  void PrintStatus(std::ostream& fp);
+  void PrintMiniTraceStatus(cAvidaContext& ctx, std::ostream& fp);
   void PrintMiniTraceSuccess(std::ostream& fp, const int exec_success);
   void PrintFinalStatus(std::ostream& fp, int time_used, int time_allocated) const;
   void Fault(int fault_loc, int fault_type, cString fault_desc="");
@@ -595,7 +595,9 @@ public:
   void ClearNortherly() { m_northerly = 0; }
   
   int GetForageTarget() const { return m_forage_target; }
-  void SetForageTarget(int forage_target);
+  int GetShowForageTarget() const { return m_show_ft; }
+  void SetForageTarget(cAvidaContext& ctx, int forage_target);
+  void SetShowForageTarget(cAvidaContext& ctx, int forage_target) { m_show_ft = forage_target; }
   bool HasSetFT() const { return m_has_set_ft; }
   void RecordFTSet() { m_has_set_ft = true; }
   bool IsTeacher() const { return m_teach; }
@@ -653,6 +655,7 @@ protected:
   int m_easterly;
 
   int m_forage_target;
+  int m_show_ft;
   bool m_has_set_ft;
   bool m_teach;
   bool m_parent_teacher;
