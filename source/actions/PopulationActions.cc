@@ -53,6 +53,7 @@
 #include <set>
 #include <numeric>
 #include <algorithm>
+#include <iterator>
 #include "stdlib.h"
 
 using namespace Avida;

@@ -46,6 +46,7 @@ static void exitAvida(int exit_code) {
 
 void Avida::Initialize()
 {
+	
   Apto::Platform::Initialize();
   
   // Catch Interrupt making sure to close appropriately
@@ -60,4 +61,5 @@ void Avida::Initialize()
   cOrganism::Initialize();
   
   Systematics::Genotype::Initialize();
+  
 }

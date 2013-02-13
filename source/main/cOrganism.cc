@@ -42,6 +42,7 @@
 #include "nHardware.h"
 
 #include <algorithm>
+#include <iterator>
 #include <iomanip>
 #include <utility>
 
